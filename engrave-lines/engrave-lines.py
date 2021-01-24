@@ -318,7 +318,7 @@ def code(arg, visit, last):
         # gcode.append('#1004 = %.4f  ( X Scale )' %(XScale))
         # gcode.append('#1005 = %.4f  ( Y Scale )' %(YScale))
         # gcode.append('#1006 = %.4f  ( Angle )' %(Angle))
-        # gcode.append(Preamble)
+        gcode.append(Preamble)
         
     gcode.append('G0Z{}'.format(Depth))
 
