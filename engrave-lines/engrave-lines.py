@@ -1,7 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """
     engrave-lines.py G-Code Engraving Generator for command-line usage
+    Ryan Ramseyer, 2021
+    
+    Update to work with python3 and remove in-gcode-function 
+
     (C) ArcEye <2012>  <arceye at mgware dot co dot uk>
     syntax  ---   see helpfile below
     
@@ -29,9 +33,9 @@
     Rev v2 21.06.2012 ArcEye
 """
 # change this if you want to use another font
-fontfile = "/usr/share/qcad/fonts/romanc.cxf"
+fontfile = "./romanc.cxf"
 
-from Tkinter import *
+# from tkinter import *
 from math import *
 import os
 import re
@@ -100,12 +104,16 @@ class Line:
 # this font description is to make it support independant x and y scaling,
 # we can not use native arcs in the gcode.
 #=======================================================================
-def parse(file):
+def parse(fp):
     font = {}
     key = None
     num_cmds = 0
     line_num = 0
-    for text in file:
+    
+    # info = fp.read()
+    # print(info)
+
+    for text in fp:
         #format for a typical letter (lowercase r):
         ##comment, with a blank line after it
         #
@@ -121,7 +129,7 @@ def parse(file):
             font[key].stroke_list = stroke_list
             font[key].xmax = xmax
             if (num_cmds != cmds_read):
-                print "(warning: discrepancy in number of commands %s, line %s, %s != %s )" % (fontfile, line_num, num_cmds, cmds_read)
+                print("(warning: discrepancy in number of commands %s, line %s, %s != %s )" % (fontfile, line_num, num_cmds, cmds_read))
 
         new_cmd = re.match('^\[(.*)\]\s(\d+)', text)
         if new_cmd: #new character
@@ -252,7 +260,7 @@ def code(arg, visit, last):
     #erase old gcode as needed
     gcode = []
     
-    file = open(fontfile)
+    fp = open(fontfile, encoding='ascii')
   
     oldx = oldy = -99990.0      
     
@@ -279,43 +287,43 @@ def code(arg, visit, last):
         gcode.append('( Engraving: "%s")' %(String) )
         gcode.append('( Fontfile: %s )' %(fontfile))
         # write out subroutine for rotation logic just once at head
-        gcode.append("(===================================================================)")
-        gcode.append("(Subroutine to handle x,y rotation about 0,0)")
-        gcode.append("(input x,y get scaled, rotated then offset )")
-        gcode.append("( [#1 = 0 or 1 for a G0 or G1 type of move], [#2=x], [#3=y])")
-        gcode.append("o9000 sub")
-        gcode.append("  #28 = [#2 * #1004]  ( scaled x )")
-        gcode.append("  #29 = [#3 * #1005]  ( scaled y )")
-        gcode.append("  #30 = [SQRT[#28 * #28 + #29 * #29 ]]   ( dist from 0 to x,y )")
-        gcode.append("  #31 = [ATAN[#29]/[#28]]                ( direction to  x,y )")
-        gcode.append("  #32 = [#30 * cos[#31 + #1006]]     ( rotated x )")
-        gcode.append("  #33 = [#30 * sin[#31 + #1006]]     ( rotated y )")
-        gcode.append("  o9010 if [#1 LT 0.5]" )
-        gcode.append("    G00 X[#32+#1002] Y[#33+#1003]")
-        gcode.append("  o9010 else")
-        gcode.append("    G01 X[#32+#1002] Y[#33+#1003]")
-        gcode.append("  o9010 endif")
-        gcode.append("o9000 endsub")
-        gcode.append("(===================================================================)")
+        # gcode.append("(===================================================================)")
+        # gcode.append("(Subroutine to handle x,y rotation about 0,0)")
+        # gcode.append("(input x,y get scaled, rotated then offset )")
+        # gcode.append("( [#1 = 0 or 1 for a G0 or G1 type of move], [#2=x], [#3=y])")
+        # gcode.append("o9000 sub")
+        # gcode.append("  #28 = [#2 * #1004]  ( scaled x )")
+        # gcode.append("  #29 = [#3 * #1005]  ( scaled y )")
+        # gcode.append("  #30 = [SQRT[#28 * #28 + #29 * #29 ]]   ( dist from 0 to x,y )")
+        # gcode.append("  #31 = [ATAN[#29]/[#28]]                ( direction to  x,y )")
+        # gcode.append("  #32 = [#30 * cos[#31 + #1006]]     ( rotated x )")
+        # gcode.append("  #33 = [#30 * sin[#31 + #1006]]     ( rotated y )")
+        # gcode.append("  o9010 if [#1 LT 0.5]" )
+        # gcode.append("    G00 X[#32+#1002] Y[#33+#1003]")
+        # gcode.append("  o9010 else")
+        # gcode.append("    G01 X[#32+#1002] Y[#33+#1003]")
+        # gcode.append("  o9010 endif")
+        # gcode.append("o9000 endsub")
+        # gcode.append("(===================================================================)")
     
-        gcode.append("#1000 = %.4f" %(SafeZ))
-        gcode.append('#1001 = %.4f  ( Engraving Depth Z )' %(Depth))
+        # gcode.append("#1000 = %.4f" %(SafeZ))
+        # gcode.append('#1001 = %.4f  ( Engraving Depth Z )' %(Depth))
         
         str1 = '#1002 = %.4f  ( X Start )' %(XStart)        
         if XLineOffset :
             if XIndentList.find(str(visit)) != -1 :
                 str1 = '#1002 = %.4f  ( X Start )' %(XStart + XLineOffset)
-        gcode.append(str1)
-        gcode.append('#1003 = %.4f  ( Y Start )' %(YStart))
-        gcode.append('#1004 = %.4f  ( X Scale )' %(XScale))
-        gcode.append('#1005 = %.4f  ( Y Scale )' %(YScale))
-        gcode.append('#1006 = %.4f  ( Angle )' %(Angle))
-        gcode.append(Preamble)
+        # gcode.append(str1)
+        # gcode.append('#1003 = %.4f  ( Y Start )' %(YStart))
+        # gcode.append('#1004 = %.4f  ( X Scale )' %(XScale))
+        # gcode.append('#1005 = %.4f  ( Y Scale )' %(YScale))
+        # gcode.append('#1006 = %.4f  ( Angle )' %(Angle))
+        # gcode.append(Preamble)
         
-    gcode.append( 'G0 Z#1000')
+    gcode.append('G0Z{}'.format(Depth))
 
-    font = parse(file)          # build stroke lists from font file
-    file.close()
+    font = parse(fp)          # build stroke lists from font file
+    fp.close()
 
     font_line_height = max(font[key].get_ymax() for key in font)
     font_word_space =  max(font[key].get_xmax() for key in font) * (WSpaceP/100.0)
@@ -352,9 +360,10 @@ def code(arg, visit, last):
                 if (dist > 0.001) or first_stroke:
                     first_stroke = False
                     #lift engraver, rapid to start of stroke, drop tool
-                    gcode.append("G0 Z#1000")
-                    gcode.append('o9000 call [0] [%.4f] [%.4f]' %(x1,y1))
-                    gcode.append("G1 Z#1001")
+                    gcode.append("G0Z{}".format(Depth))
+                    x1, y1 = Rotn(x1, y1, XScale, YScale, Angle)
+                    gcode.append('G0X%.4fY%.4f' %(x1,y1))
+                    gcode.append("G1Z{}".format(Depth))
 
                 x2 = stroke.xend + xoffset
                 y2 = stroke.yend
@@ -362,7 +371,9 @@ def code(arg, visit, last):
                     x2 = -x2
                 if Flip == 1:
                     y2 = -y2
-                gcode.append('o9000 call [1] [%.4f] [%.4f]' %(x2,y2))
+                x2, y2 = Rotn(x2, y2, XScale, YScale, Angle)
+                gcode.append('G1X%.4fY%.4f' %(x2,y2))
+                # gcode.append('o9000 call [1] [%.4f] [%.4f]' %(x2,y2))
                 oldx, oldy = stroke.xend, stroke.yend
 
             # move over for next character
@@ -374,7 +385,7 @@ def code(arg, visit, last):
 
         gcode.append("")       # blank line after every char block
 
-    gcode.append( 'G0 Z#1000')     # final engraver up
+    gcode.append('G0 Z{}'.format(Depth))     # final engraver up
 
     # finish up with icing
     if last:
@@ -386,12 +397,12 @@ def code(arg, visit, last):
 ################################################################################################################
 
 def help_message():
-    print '''engrave-lines.py G-Code Engraving Generator for command-line usage
+    print('''engrave-lines.py G-Code Engraving Generator for command-line usage
             (C) ArcEye <2012> 
             based upon code from engrave-11.py
-            Copyright (C) <2008>  <Lawrence Glaister> <ve7it at shaw dot ca>'''
+            Copyright (C) <2008>  <Lawrence Glaister> <ve7it at shaw dot ca>''')
             
-    print '''engrave-lines.py -X -x -i -Y -y -S -s -Z -D -C -W -M -F -P -p -0 -1 -2 -3 ..............
+    print('''engrave-lines.py -X -x -i -Y -y -S -s -Z -D -C -W -M -F -P -p -0 -1 -2 -3 ..............
        Options: 
        -h   Display this help message
        -X   Start X value                       Defaults to 0
@@ -421,7 +432,7 @@ def help_message():
        -9   Line9 string follow this
       Example
       engrave-lines.py -X7.5 -x5 -i'123' -Y12.75 -y5.25 -S0.4 -s0.5 -Z2 -D0.1 -0'Line0' -1'Line1' -2'Line2' -3'Line3' > test.ngc
-    '''
+    ''')
     sys.exit(0)
 
 #===============================================================================================================
@@ -453,7 +464,7 @@ def main():
     try:
         options, xarguments = getopt.getopt(sys.argv[1:], 'hd:X:x:i:Y:y:S:s:Z:D:C:W:M:F:P:p:L:0:1:2:3:4:5:6:7:8:9:')
     except getopt.error:
-        print 'Error: You tried to use an unknown option. Try `engrave-lines.py -h\' for more information.'
+        print('Error: You tried to use an unknown option. Try `engrave-lines.py -h\' for more information.')
         sys.exit(0)
         
     if len(sys.argv[1:]) == 0:
@@ -468,103 +479,79 @@ def main():
     for a in options[:]:
         if a[0] == '-d' and a[1] != '':
             debug = int(a[1])
-            print'debug set to %d' %(debug)
+            print('debug set to %d' %(debug))
             options.remove(a)
             break
 
     for a in options[:]:
         if a[0] == '-X' and a[1] != '':
             XStart = float(a[1])
-            if debug:            
-                print'X = %.4f' %(XStart)
             options.remove(a)
             break
 
     for a in options[:]:
         if a[0] == '-x' and a[1] != '':
             XLineOffset = float(a[1])
-            if debug:
-                print'x = %.4f' %(XLineOffset)
             options.remove(a)
             break
 
     for a in options[:]:
         if a[0] == '-i' and a[1] != '':
             XIndentList = a[1]
-            if debug:
-                print'i = %s' %(a[1])
             options.remove(a)
             break
             
     for a in options[:]:
         if a[0] == '-Y' and a[1] != '':
             YStart = float(a[1])
-            if debug:
-                print'Y = %.4f' %(YStart)
             options.remove(a)
             break
 
     for a in options[:]:
         if a[0] == '-y' and a[1] != '':
             YLineOffset = float(a[1])
-            if debug:
-                print'y = %.4f' %(YLineOffset)
             options.remove(a)
             break
             
     for a in options[:]:
         if a[0] == '-S' and a[1] != '':
             XScale = float(a[1])
-            if debug:
-                print'S = %.4f' %(XScale)
             options.remove(a)
             break            
   
     for a in options[:]:
         if a[0] == '-s' and a[1] != '':
             YScale = float(a[1])
-            if debug:
-                print's = %.4f' %(YScale)
             options.remove(a)
             break              
   
     for a in options[:]:
         if a[0] == '-Z' and a[1] != '':
             SafeZ = float(a[1])
-            if debug:
-                print'Z = %.4f' %(SafeZ)
             options.remove(a)
             break  
   
     for a in options[:]:
         if a[0] == '-D' and a[1] != '':
             Depth = float(a[1])
-            if debug:
-                print'D = %.4f' %(Depth)
             options.remove(a)
             break    
   
     for a in options[:]:
         if a[0] == '-C' and a[1] != '':
             CSpaceP = float(a[1])
-            if debug:
-                print'C = %.4f' %(CSpaceP)
             options.remove(a)
             break      
 
     for a in options[:]:
         if a[0] == '-W' and a[1] != '':
             WSpaceP = float(a[1])    
-            if debug:
-                print'W = %.4f' %(WSpaceP)
             options.remove(a)
             break      
 
     for a in options[:]:
         if a[0] == '-A' and a[1] != '':
             Angle = float(a[1])
-            if debug:
-                print'A = %.4f' %(Angle)
             options.remove(a)
             break  
             
@@ -572,112 +559,84 @@ def main():
     for a in options[:]:
         if a[0] == '-M' and a[1] != '':
             Mirror = float(a[1])
-            if debug:
-                print'M = %.4f' %(Mirror)
             options.remove(a)
             break  
               
     for a in options[:]:
         if a[0] == '-F' and a[1] != '':
             Flip = float(a[1])
-            if debug:
-                print'F = %.4f' %(Flip)
             options.remove(a)
             break  
 
     for a in options[:]:
         if a[0] == '-P' and a[1] != '':
             Preamble = a[1]
-            if debug:
-                print'P = %s' %(a[1])
             options.remove(a)
             break  
 
     for a in options[:]:
         if a[0] == '-p' and a[1] != '':            
             Postamble = a[1]
-            if debug:
-                print'p = %s' %(a[1])
             options.remove(a)
             break  
 
     for a in options[:]:
         if a[0] == '-0' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'0 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-1' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'1 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-2' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'2 = %s' %(a[1])
             options.remove(a)
             break  
 
     for a in options[:]:
         if a[0] == '-3' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'3 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-4' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'4 = %s' %(a[1])
             options.remove(a)
             break  
 
     for a in options[:]:
         if a[0] == '-5' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'5 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-6' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'6 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-7' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'7 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-8' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'8 = %s' %(a[1])
             options.remove(a)
             break  
             
     for a in options[:]:
         if a[0] == '-9' and a[1] != '':
             stringlist.append(a[1])
-            if debug:
-                print'9 = %s' %(a[1])
             options.remove(a)
             break  
             
@@ -691,3 +650,5 @@ if __name__ == "__main__":
 	    main()
 
 #===============================================================================================END
+
+
